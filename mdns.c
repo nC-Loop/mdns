@@ -124,8 +124,8 @@ query_callback(int sock, const struct sockaddr* from, size_t addrlen, mdns_entry
 	(void)sizeof(user_data);
 	mdns_string_t fromaddrstr = ip_address_to_string(addrbuffer, sizeof(addrbuffer), from, addrlen);
 	const char* entrytype = (entry == MDNS_ENTRYTYPE_ANSWER) ?
-                                "answer" :
-                                ((entry == MDNS_ENTRYTYPE_AUTHORITY) ? "authority" : "additional");
+	                            "answer" :
+	                            ((entry == MDNS_ENTRYTYPE_AUTHORITY) ? "authority" : "additional");
 	mdns_string_t entrystr =
 	    mdns_string_extract(data, size, &name_offset, entrybuffer, sizeof(entrybuffer));
 	if (rtype == MDNS_RECORDTYPE_PTR) {
@@ -790,8 +790,7 @@ send_mdns_query(mdns_query_t* query, size_t count) {
 	}
 	printf("\n");
 	for (int isock = 0; isock < num_sockets; ++isock) {
-		query_id[isock] =
-		    mdns_multiquery_send(sockets[isock], query, count, buffer, capacity, 0);
+		query_id[isock] = mdns_multiquery_send(sockets[isock], query, count, buffer, capacity, 0);
 		if (query_id[isock] < 0)
 			printf("Failed to send mDNS query: %s\n", strerror(errno));
 	}
@@ -1005,7 +1004,7 @@ service_mdns(const char* hostname, const char* service_name, int service_port) {
 
 		for (int isock = 0; isock < num_sockets; ++isock)
 			mdns_goodbye_multicast(sockets[isock], buffer, capacity, service.record_ptr, 0, 0,
-			                        additional, additional_count);
+			                       additional, additional_count);
 	}
 
 	free(buffer);
@@ -1017,7 +1016,6 @@ service_mdns(const char* hostname, const char* service_name, int service_port) {
 
 	return 0;
 }
-
 
 // Dump all incoming mDNS queries and answers
 static int
@@ -1147,14 +1145,16 @@ fuzz_mdns(void) {
 #endif
 
 #ifdef _WIN32
-BOOL console_handler(DWORD signal) {
+BOOL
+console_handler(DWORD signal) {
 	if (signal == CTRL_C_EVENT) {
 		running = 0;
 	}
 	return TRUE;
 }
 #else
-void signal_handler(int signal) {
+void
+signal_handler(int signal) {
 	running = 0;
 }
 #endif
@@ -1162,7 +1162,7 @@ void signal_handler(int signal) {
 int
 main(int argc, const char* const* argv) {
 	int mode = 0;
-	const char* service = "_test-mdns._tcp.local.";
+	const char* service = "_loopit._tcp.local.";
 	const char* hostname = "dummy-host";
 	mdns_query_t query[16];
 	size_t query_count = 0;

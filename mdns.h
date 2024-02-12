@@ -338,9 +338,9 @@ mdns_string_skip(const void* buffer, size_t size, size_t* offset);
 static inline size_t
 mdns_string_find(const char* str, size_t length, char c, size_t offset);
 
-//! Compare if two strings are equal. If the strings are equal it returns >0 and the offset variables are
-//! updated to the end of the corresponding strings. If the strings are not equal it returns 0 and 
-//! the offset variables are NOT updated.
+//! Compare if two strings are equal. If the strings are equal it returns >0 and the offset
+//! variables are updated to the end of the corresponding strings. If the strings are not equal it
+//! returns 0 and the offset variables are NOT updated.
 static inline int
 mdns_string_equal(const void* buffer_lhs, size_t size_lhs, size_t* ofs_lhs, const void* buffer_rhs,
                   size_t size_rhs, size_t* ofs_rhs);
@@ -746,10 +746,9 @@ mdns_string_make(void* buffer, size_t capacity, void* data, const char* name, si
 		size_t sub_length = ((pos != MDNS_INVALID_POS) ? pos : length) - last_pos;
 		size_t total_length = length - last_pos;
 
-		size_t ref_offset =
-		    mdns_string_table_find(string_table, buffer, capacity,
-		                           (char*)MDNS_POINTER_OFFSET(name, last_pos), sub_length,
-		                           total_length);
+		size_t ref_offset = mdns_string_table_find(string_table, buffer, capacity,
+		                                           (char*)MDNS_POINTER_OFFSET(name, last_pos),
+		                                           sub_length, total_length);
 		if (ref_offset != MDNS_INVALID_POS)
 			return mdns_string_make_ref(data, remain, ref_offset);
 
@@ -901,8 +900,11 @@ mdns_discovery_recv(int sock, void* buffer, size_t capacity, mdns_record_callbac
 	uint16_t additional_rrs = mdns_ntohs(data++);
 
 	// According to RFC 6762 the query ID MUST match the sent query ID (which is 0 in our case)
-	if (query_id || (flags != 0x8400))
-		return 0;  // Not a reply to our question
+	if (query_id || (flags != 0x8400)) {
+		printf("Received QUERY ID does not match sent QUERY ID as required per RFC 6762.\n");
+		return 0;
+		// Not a reply to our question
+	}
 
 	// It seems some implementations do not fill the correct questions field,
 	// so ignore this check for now and only validate answer string
@@ -924,7 +926,11 @@ mdns_discovery_recv(int sock, void* buffer, size_t capacity, mdns_record_callbac
 
 		// Make sure we get a reply based on our PTR question for class IN
 		if ((rtype != MDNS_RECORDTYPE_PTR) || ((rclass & 0x7FFF) != MDNS_CLASS_IN))
+
+		{
+			printf("We did not get a reply based on our PTR question for class IN");
 			return 0;
+		}
 	}
 
 	for (i = 0; i < answer_rrs; ++i) {
@@ -1071,8 +1077,8 @@ mdns_query_send(int sock, mdns_record_type_t type, const char* name, size_t leng
 }
 
 static inline int
-mdns_multiquery_send(int sock, const mdns_query_t* query, size_t count, void* buffer, size_t capacity,
-                     uint16_t query_id) {
+mdns_multiquery_send(int sock, const mdns_query_t* query, size_t count, void* buffer,
+                     size_t capacity, uint16_t query_id) {
 	if (!count || (capacity < (sizeof(struct mdns_header_t) + (6 * count))))
 		return -1;
 
@@ -1208,7 +1214,8 @@ mdns_answer_add_question_unicast(void* buffer, size_t capacity, void* data,
 static inline void*
 mdns_answer_add_record_header(void* buffer, size_t capacity, void* data, mdns_record_t record,
                               mdns_string_table_t* string_table) {
-	data = mdns_string_make(buffer, capacity, data, record.name.str, record.name.length, string_table);
+	data =
+	    mdns_string_make(buffer, capacity, data, record.name.str, record.name.length, string_table);
 	if (!data)
 		return 0;
 	size_t remain = capacity - MDNS_POINTER_DIFF(data, buffer);
@@ -1400,8 +1407,8 @@ mdns_query_answer_unicast(int sock, const void* address, size_t address_size, vo
 			record.ttl = ttl;
 		data = mdns_answer_add_record(buffer, capacity, data, record, &string_table);
 	}
-	data = mdns_answer_add_txt_record(buffer, capacity, data, authority, authority_count,
-	                                  rclass, ttl, &string_table);
+	data = mdns_answer_add_txt_record(buffer, capacity, data, authority, authority_count, rclass,
+	                                  ttl, &string_table);
 
 	// Fill in additional records
 	for (size_t irec = 0; data && (irec < additional_count); ++irec) {
@@ -1411,8 +1418,8 @@ mdns_query_answer_unicast(int sock, const void* address, size_t address_size, vo
 			record.ttl = ttl;
 		data = mdns_answer_add_record(buffer, capacity, data, record, &string_table);
 	}
-	data = mdns_answer_add_txt_record(buffer, capacity, data, additional, additional_count,
-	                                  rclass, ttl, &string_table);
+	data = mdns_answer_add_txt_record(buffer, capacity, data, additional, additional_count, rclass,
+	                                  ttl, &string_table);
 	if (!data)
 		return -1;
 
@@ -1451,8 +1458,8 @@ mdns_answer_multicast_rclass_ttl(int sock, void* buffer, size_t capacity, mdns_r
 		mdns_record_update_rclass_ttl(&record, rclass, ttl);
 		data = mdns_answer_add_record(buffer, capacity, data, record, &string_table);
 	}
-	data = mdns_answer_add_txt_record(buffer, capacity, data, authority, authority_count,
-	                                  rclass, ttl, &string_table);
+	data = mdns_answer_add_txt_record(buffer, capacity, data, authority, authority_count, rclass,
+	                                  ttl, &string_table);
 
 	// Fill in additional records
 	for (size_t irec = 0; data && (irec < additional_count); ++irec) {
@@ -1460,8 +1467,8 @@ mdns_answer_multicast_rclass_ttl(int sock, void* buffer, size_t capacity, mdns_r
 		mdns_record_update_rclass_ttl(&record, rclass, ttl);
 		data = mdns_answer_add_record(buffer, capacity, data, record, &string_table);
 	}
-	data = mdns_answer_add_txt_record(buffer, capacity, data, additional, additional_count,
-	                                  rclass, ttl, &string_table);
+	data = mdns_answer_add_txt_record(buffer, capacity, data, additional, additional_count, rclass,
+	                                  ttl, &string_table);
 	if (!data)
 		return -1;
 
@@ -1481,7 +1488,7 @@ mdns_query_answer_multicast(int sock, void* buffer, size_t capacity, mdns_record
 static inline int
 mdns_announce_multicast(int sock, void* buffer, size_t capacity, mdns_record_t answer,
                         const mdns_record_t* authority, size_t authority_count,
-                        const  mdns_record_t* additional, size_t additional_count) {
+                        const mdns_record_t* additional, size_t additional_count) {
 	return mdns_answer_multicast_rclass_ttl(sock, buffer, capacity, answer, authority,
 	                                        authority_count, additional, additional_count,
 	                                        MDNS_CLASS_IN | MDNS_CACHE_FLUSH, 60);
